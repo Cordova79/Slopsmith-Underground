@@ -1,0 +1,58 @@
+with Ada.Text_IO;
+with Ada.Directories;
+with Ada.Strings.Fixed;
+
+procedure Find_PSARC is
+
+   use Ada.Text_IO;
+   use Ada.Directories;
+   use Ada.Strings.Fixed;
+
+   procedure Search_Directory (Path : String) is
+      Search : Search_Type;
+      Entry  : Directory_Entry_Type;
+   begin
+      Start_Search (
+         Search    => Search,
+         Directory => Path,
+         Pattern   => "*",
+         Filter    => (Directory => True,
+                       Ordinary_File => True,
+                       Special_File => False)
+      );
+
+      while More_Entries (Search) loop
+         Get_Next_Entry (Search, Entry);
+
+         declare
+            Full_Name : constant String := Full_Name (Entry);
+            Kind      : constant File_Kind := Kind (Entry);
+         begin
+            if Kind = Ordinary_File then
+               if Index (Full_Name, ".psarc") > 0 then
+                  Put_Line (Full_Name);
+               end if;
+
+            elsif Kind = Directory then
+               declare
+                  Name : constant String := Simple_Name (Entry);
+               begin
+                  if Name /= "." and then Name /= ".." then
+                     Search_Directory (Full_Name);
+                  end if;
+               end;
+            end if;
+         end;
+      end loop;
+
+      End_Search (Search);
+
+   exception
+      when others =>
+         Put_Line ("Access denied or error: " & Path);
+   end Search_Directory;
+
+begin
+   -- Change this to the drive or folder you want to search
+   Search_Directory ("C:\");
+end Find_PSARC;
